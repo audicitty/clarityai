@@ -7,6 +7,7 @@ import { useState, useCallback } from "react";
 import { motion } from "framer-motion";
 import { Target, CheckCircle2, Lightbulb, HelpCircle, Copy, Check } from "lucide-react";
 import type { ClarityOutput } from "@/lib/types";
+import { useToast } from "@/lib/toast-context";
 import { cn } from "@/lib/utils";
 
 interface OutputCardsProps {
@@ -21,6 +22,7 @@ interface CardConfig {
   Icon: React.ComponentType<{ className?: string }>;
   borderClass: string;
   iconClass: string;
+  dotClass: string;
   emptyMessage: string;
 }
 
@@ -31,6 +33,7 @@ const CARD_CONFIGS: CardConfig[] = [
     Icon: Target,
     borderClass: "border-brand-purple/40 hover:border-brand-purple/70",
     iconClass: "text-brand-purple-light",
+    dotClass: "bg-brand-purple-light",
     emptyMessage: "No summary available.",
   },
   {
@@ -39,6 +42,7 @@ const CARD_CONFIGS: CardConfig[] = [
     Icon: CheckCircle2,
     borderClass: "border-brand-blue/40 hover:border-brand-blue/70",
     iconClass: "text-brand-blue-light",
+    dotClass: "bg-brand-blue-light",
     emptyMessage: "No action items identified.",
   },
   {
@@ -47,6 +51,7 @@ const CARD_CONFIGS: CardConfig[] = [
     Icon: Lightbulb,
     borderClass: "border-brand-indigo/40 hover:border-brand-indigo/70",
     iconClass: "text-indigo-300",
+    dotClass: "bg-indigo-300",
     emptyMessage: "No key decisions identified.",
   },
   {
@@ -55,39 +60,42 @@ const CARD_CONFIGS: CardConfig[] = [
     Icon: HelpCircle,
     borderClass: "border-violet-500/40 hover:border-violet-500/70",
     iconClass: "text-violet-300",
+    dotClass: "bg-violet-300",
     emptyMessage: "No open questions identified.",
   },
 ];
 
-// ─── Copy hook ────────────────────────────────────────────────────────────────
-
-function useCopy(timeout = 1800) {
-  const [copied, setCopied] = useState(false);
-
-  const copy = useCallback(async (text: string) => {
-    if (!text) return;
-    await navigator.clipboard.writeText(text);
-    setCopied(true);
-    setTimeout(() => setCopied(false), timeout);
-  }, [timeout]);
-
-  return { copied, copy };
-}
-
 // ─── CopyButton ───────────────────────────────────────────────────────────────
 
-function CopyButton({ text, className }: { text: string; className?: string }) {
-  const { copied, copy } = useCopy();
+function CopyButton({
+  text,
+  label = "Copy",
+  className,
+}: {
+  text: string;
+  label?: string;
+  className?: string;
+}) {
+  const [copied, setCopied] = useState(false);
+  const { showToast } = useToast();
+
+  const handleCopy = useCallback(async () => {
+    if (!text || copied) return;
+    await navigator.clipboard.writeText(text);
+    setCopied(true);
+    showToast("Copied!");
+    setTimeout(() => setCopied(false), 1800);
+  }, [text, copied, showToast]);
 
   return (
     <button
-      onClick={() => copy(text)}
-      title={copied ? "Copied!" : "Copy"}
-      aria-label={copied ? "Copied to clipboard" : "Copy to clipboard"}
+      onClick={handleCopy}
+      title={copied ? "Copied!" : label}
+      aria-label={copied ? "Copied to clipboard" : `${label} to clipboard`}
       className={cn(
-        "flex items-center gap-1 rounded-lg px-2 py-1 text-xs transition-all duration-150",
+        "flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-medium transition-all duration-150",
         "text-text-muted hover:text-text-primary hover:bg-surface-elevated",
-        "focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-brand-purple",
+        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-purple focus-visible:ring-offset-1 focus-visible:ring-offset-background",
         className
       )}
     >
@@ -96,12 +104,12 @@ function CopyButton({ text, className }: { text: string; className?: string }) {
       ) : (
         <Copy className="size-3" aria-hidden="true" />
       )}
-      <span>{copied ? "Copied" : "Copy"}</span>
+      {copied ? "Copied" : label}
     </button>
   );
 }
 
-// ─── Individual card ──────────────────────────────────────────────────────────
+// ─── Individual output card ───────────────────────────────────────────────────
 
 interface OutputCardProps {
   config: CardConfig;
@@ -110,12 +118,12 @@ interface OutputCardProps {
 }
 
 function OutputCard({ config, content, delay }: OutputCardProps) {
-  const { Icon, label, borderClass, iconClass, emptyMessage } = config;
+  const { Icon, label, borderClass, iconClass, dotClass, emptyMessage } = config;
   const isList = Array.isArray(content);
   const isEmpty = isList ? content.length === 0 : !content;
 
   const copyText = isList
-    ? content.map((item, i) => `${i + 1}. ${item}`).join("\n")
+    ? (content as string[]).map((item, i) => `${i + 1}. ${item}`).join("\n")
     : (content as string);
 
   return (
@@ -128,7 +136,7 @@ function OutputCard({ config, content, delay }: OutputCardProps) {
         ease: [0.25, 0.46, 0.45, 0.94] as [number, number, number, number],
       }}
       className={cn(
-        "group rounded-2xl bg-surface border transition-all duration-200",
+        "rounded-2xl bg-surface border transition-all duration-200",
         "hover:-translate-y-0.5 hover:shadow-card",
         borderClass
       )}
@@ -138,8 +146,10 @@ function OutputCard({ config, content, delay }: OutputCardProps) {
         <div className="flex items-center gap-2">
           <Icon className={cn("size-4 shrink-0", iconClass)} aria-hidden="true" />
           <span className="text-sm font-semibold text-text-primary">{label}</span>
-          {isList && content.length > 0 && (
-            <span className="text-xs text-text-muted tabular-nums">({content.length})</span>
+          {isList && (content as string[]).length > 0 && (
+            <span className="text-xs text-text-muted tabular-nums">
+              ({(content as string[]).length})
+            </span>
           )}
         </div>
         {!isEmpty && <CopyButton text={copyText} />}
@@ -152,9 +162,12 @@ function OutputCard({ config, content, delay }: OutputCardProps) {
         ) : isList ? (
           <ul className="space-y-2.5">
             {(content as string[]).map((item, i) => (
-              <li key={i} className="flex items-start gap-2.5 text-sm text-text-secondary leading-relaxed">
+              <li
+                key={i}
+                className="flex items-start gap-2.5 text-sm text-text-secondary leading-relaxed"
+              >
                 <span
-                  className={cn("mt-2 size-1.5 rounded-full shrink-0", iconClass, "opacity-70")}
+                  className={cn("mt-2 size-1.5 rounded-full shrink-0 opacity-70", dotClass)}
                   aria-hidden="true"
                 />
                 {item}
@@ -189,16 +202,14 @@ export function OutputCards({ output }: OutputCardsProps) {
 
   return (
     <div className="space-y-4">
-      <div className="grid grid-cols-1 gap-4">
-        {CARD_CONFIGS.map((config, index) => (
-          <OutputCard
-            key={config.key}
-            config={config}
-            content={output[config.key]}
-            delay={index * 0.1}
-          />
-        ))}
-      </div>
+      {CARD_CONFIGS.map((config, index) => (
+        <OutputCard
+          key={config.key}
+          config={config}
+          content={output[config.key]}
+          delay={index * 0.1}
+        />
+      ))}
 
       {/* Copy All */}
       <motion.div
@@ -209,7 +220,8 @@ export function OutputCards({ output }: OutputCardsProps) {
       >
         <CopyButton
           text={allText}
-          className="px-3 py-1.5 text-sm border border-border rounded-xl hover:border-brand-purple/40"
+          label="Copy all"
+          className="px-3 py-1.5 border border-border rounded-xl hover:border-brand-purple/40"
         />
       </motion.div>
     </div>

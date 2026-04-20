@@ -1,24 +1,24 @@
-// Chat panel for asking follow-up questions about the structured content
+// Chat panel: ask follow-up questions about the structured content
+// Slides up on first render, maintains full conversation history
 
 "use client";
 
-import { useState, useRef, useEffect, type FormEvent, type KeyboardEvent } from "react";
+import {
+  useState,
+  useRef,
+  useEffect,
+  type FormEvent,
+  type KeyboardEvent,
+} from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Button } from "@/components/ui/Button";
-import { Card } from "@/components/ui/Card";
+import { Send } from "lucide-react";
 import { sendChatMessage, type ChatMessage } from "@/actions/chat";
 import type { ClarityOutput } from "@/lib/types";
-import { CHAT_PLACEHOLDER, CHAT_SEND_LABEL } from "@/lib/constants";
 
 interface ChatPanelProps {
   clarityOutput: ClarityOutput;
   originalText: string;
 }
-
-const messageVariants = {
-  hidden: { opacity: 0, y: 8 },
-  visible: { opacity: 1, y: 0, transition: { duration: 0.25 } },
-};
 
 export function ChatPanel({ clarityOutput, originalText }: ChatPanelProps) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -26,19 +26,20 @@ export function ChatPanel({ clarityOutput, originalText }: ChatPanelProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
-  const inputRef = useRef<HTMLTextAreaElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
 
+  // Auto-scroll to latest message
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
+  }, [messages, isLoading]);
 
   async function handleSubmit(e?: FormEvent) {
     e?.preventDefault();
     const trimmed = input.trim();
     if (!trimmed || isLoading) return;
 
-    const userMessage: ChatMessage = { role: "user", content: trimmed };
-    setMessages((prev) => [...prev, userMessage]);
+    const userMsg: ChatMessage = { role: "user", content: trimmed };
+    setMessages((prev) => [...prev, userMsg]);
     setInput("");
     setIsLoading(true);
     setError(null);
@@ -52,9 +53,10 @@ export function ChatPanel({ clarityOutput, originalText }: ChatPanelProps) {
     }
 
     setIsLoading(false);
+    setTimeout(() => inputRef.current?.focus(), 50);
   }
 
-  function handleKeyDown(e: KeyboardEvent<HTMLTextAreaElement>) {
+  function handleKeyDown(e: KeyboardEvent<HTMLInputElement>) {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
       handleSubmit();
@@ -62,35 +64,52 @@ export function ChatPanel({ clarityOutput, originalText }: ChatPanelProps) {
   }
 
   return (
-    <Card className="flex flex-col h-full min-h-[500px]">
+    <motion.div
+      initial={{ opacity: 0, y: 24 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.4, delay: 0.45, ease: [0.25, 0.46, 0.45, 0.94] }}
+      className="rounded-2xl border border-border bg-surface flex flex-col overflow-hidden"
+    >
       {/* Header */}
-      <div className="px-5 py-4 border-b border-border-subtle flex items-center gap-2">
-        <span className="size-2 rounded-full bg-brand-purple animate-pulse-glow" aria-hidden="true" />
-        <h2 className="text-sm font-semibold text-text-primary">Ask a follow-up</h2>
+      <div className="px-5 py-4 border-b border-border-subtle">
+        <div className="flex items-center gap-2.5">
+          <span
+            className="size-2 rounded-full bg-brand-purple animate-pulse-glow shrink-0"
+            aria-hidden="true"
+          />
+          <div>
+            <h2 className="text-sm font-semibold text-text-primary leading-none">
+              Chat with your content
+            </h2>
+            <p className="text-xs text-text-muted mt-0.5">
+              Ask anything about what you pasted
+            </p>
+          </div>
+        </div>
       </div>
 
-      {/* Messages */}
-      <div className="flex-1 overflow-y-auto px-5 py-4 space-y-4 min-h-0">
-        {messages.length === 0 && (
-          <p className="text-sm text-text-muted italic text-center mt-8">
-            Ask anything about the content above…
+      {/* Message area — fixed 300px height */}
+      <div className="h-[300px] overflow-y-auto px-5 py-4 space-y-3 scrollbar-thin">
+        {messages.length === 0 && !isLoading && (
+          <p className="text-sm text-text-muted italic text-center mt-10">
+            Ask a follow-up about the content above…
           </p>
         )}
 
         <AnimatePresence initial={false}>
-          {messages.map((msg, index) => (
+          {messages.map((msg, i) => (
             <motion.div
-              key={index}
-              variants={messageVariants}
-              initial="hidden"
-              animate="visible"
+              key={i}
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.22 }}
               className={msg.role === "user" ? "flex justify-end" : "flex justify-start"}
             >
               <div
                 className={
                   msg.role === "user"
-                    ? "max-w-[80%] rounded-2xl rounded-br-sm bg-gradient-to-r from-brand-purple to-brand-blue px-4 py-3 text-sm text-white"
-                    : "max-w-[85%] rounded-2xl rounded-bl-sm bg-surface-elevated border border-border px-4 py-3 text-sm text-text-secondary"
+                    ? "max-w-[78%] rounded-2xl rounded-br-sm bg-gradient-to-r from-brand-purple to-brand-blue px-4 py-2.5 text-sm text-white leading-relaxed"
+                    : "max-w-[84%] rounded-2xl rounded-bl-sm bg-surface-elevated border border-border px-4 py-2.5 text-sm text-text-secondary leading-relaxed"
                 }
               >
                 {msg.content}
@@ -99,15 +118,15 @@ export function ChatPanel({ clarityOutput, originalText }: ChatPanelProps) {
           ))}
         </AnimatePresence>
 
+        {/* Typing indicator */}
         {isLoading && (
           <motion.div
-            variants={messageVariants}
-            initial="hidden"
-            animate="visible"
+            initial={{ opacity: 0, y: 6 }}
+            animate={{ opacity: 1, y: 0 }}
             className="flex justify-start"
           >
             <div className="rounded-2xl rounded-bl-sm bg-surface-elevated border border-border px-4 py-3">
-              <div className="flex gap-1 items-center">
+              <div className="flex gap-1 items-center h-4">
                 {[0, 1, 2].map((i) => (
                   <span
                     key={i}
@@ -128,32 +147,30 @@ export function ChatPanel({ clarityOutput, originalText }: ChatPanelProps) {
         <div ref={bottomRef} />
       </div>
 
-      {/* Input */}
+      {/* Input row */}
       <form
         onSubmit={handleSubmit}
-        className="px-5 py-4 border-t border-border-subtle flex gap-3 items-end"
+        className="px-4 py-3 border-t border-border-subtle flex gap-2 items-center"
       >
-        <textarea
+        <input
           ref={inputRef}
+          type="text"
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={handleKeyDown}
-          placeholder={CHAT_PLACEHOLDER}
-          rows={1}
+          placeholder="Ask a follow-up…"
           disabled={isLoading}
-          className="flex-1 resize-none rounded-xl bg-surface-elevated border border-border px-4 py-3 text-sm text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-brand-purple/50 focus:border-brand-purple/50 transition-colors duration-200 disabled:opacity-50 max-h-32 overflow-y-auto"
+          className="flex-1 rounded-xl bg-surface-elevated border border-border px-4 py-2.5 text-sm text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-brand-purple/40 focus:border-brand-purple/50 transition-colors duration-200 disabled:opacity-50"
         />
-        <Button
+        <button
           type="submit"
-          variant="primary"
-          size="sm"
-          isLoading={isLoading}
-          disabled={!input.trim()}
+          disabled={!input.trim() || isLoading}
           aria-label="Send message"
+          className="shrink-0 size-9 rounded-xl bg-gradient-to-r from-brand-purple to-brand-blue flex items-center justify-center text-white transition-all duration-200 hover:shadow-glow-purple hover:scale-105 active:scale-95 disabled:opacity-40 disabled:pointer-events-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-purple focus-visible:ring-offset-2 focus-visible:ring-offset-background"
         >
-          {CHAT_SEND_LABEL}
-        </Button>
+          <Send className="size-3.5" aria-hidden="true" />
+        </button>
       </form>
-    </Card>
+    </motion.div>
   );
 }

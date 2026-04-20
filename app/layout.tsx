@@ -1,9 +1,10 @@
-// Root layout: applies Geist font, dark background, and global metadata
+// Root layout: Geist font, dark background, global metadata, toast provider
 
 import type { Metadata } from "next";
 import localFont from "next/font/local";
 import "./globals.css";
 import { APP_NAME, APP_DESCRIPTION } from "@/lib/constants";
+import { ToastProvider } from "@/lib/toast-context";
 
 const geistSans = localFont({
   src: "./fonts/GeistVF.woff",
@@ -20,8 +21,14 @@ const geistMono = localFont({
 });
 
 export const metadata: Metadata = {
-  title: `${APP_NAME} — Turn chaos into clarity`,
+  title: {
+    default: `${APP_NAME} — Turn chaos into clarity`,
+    template: `%s | ${APP_NAME}`,
+  },
   description: APP_DESCRIPTION,
+  icons: {
+    icon: "/favicon.svg",
+  },
   openGraph: {
     title: `${APP_NAME} — Turn chaos into clarity`,
     description: APP_DESCRIPTION,
@@ -39,7 +46,7 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased bg-background text-text-primary font-sans`}
       >
-        {children}
+        <ToastProvider>{children}</ToastProvider>
       </body>
     </html>
   );

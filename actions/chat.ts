@@ -7,8 +7,19 @@ import type { ClarityOutput } from "@/lib/types";
 
 const MODELS = ["gemini-flash-latest", "gemini-flash-lite-latest"];
 
-const CHAT_SYSTEM_PROMPT =
-  "You are ClarityAI's assistant. The user has pasted some content and you've already structured it. Answer follow-up questions based only on the provided content. Be concise and direct. If something isn't covered, say so.";
+function buildSystemInstruction(originalText: string, clarity: ClarityOutput): string {
+  const context = [
+    originalText,
+    "",
+    "STRUCTURED SUMMARY:",
+    `TL;DR: ${clarity.tldr}`,
+    `Action Items: ${clarity.actionItems.join("; ") || "None"}`,
+    `Key Decisions: ${clarity.keyDecisions.join("; ") || "None"}`,
+    `Open Questions: ${clarity.openQuestions.join("; ") || "None"}`,
+  ].join("\n");
+
+  return `You are a helpful assistant. The user has pasted the following content into ClarityAI:\n\n${context}\n\nAnswer their questions about this content only. Be concise and direct. If asked something unrelated to the content, politely redirect.`;
+}
 
 export interface ChatMessage {
   role: "user" | "assistant";
@@ -37,18 +48,7 @@ export async function sendChatMessage(
     return { success: false, error: "Message cannot be empty." };
   }
 
-  const contextBlock = [
-    "ORIGINAL CONTENT:",
-    originalText,
-    "",
-    "STRUCTURED SUMMARY:",
-    `TL;DR: ${clarityContext.tldr}`,
-    `Action Items: ${clarityContext.actionItems.join("; ") || "None"}`,
-    `Key Decisions: ${clarityContext.keyDecisions.join("; ") || "None"}`,
-    `Open Questions: ${clarityContext.openQuestions.join("; ") || "None"}`,
-  ].join("\n");
-
-  const systemInstruction = `${CHAT_SYSTEM_PROMPT}\n\n${contextBlock}`;
+  const systemInstruction = buildSystemInstruction(originalText, clarityContext);
   const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
   let lastError: unknown;
 
