@@ -1,4 +1,5 @@
 // Root layout — editorial aesthetic, Inter + Playfair via Google Fonts in CSS
+// redeploy: 2026-04-22
 
 import type { Metadata } from "next";
 import "./globals.css";
