@@ -1,29 +1,21 @@
-// Reusable Badge component for labels and status indicators
+// Badge — outlined editorial tag, uppercase micro-text, no fill
 
 import { type HTMLAttributes } from "react";
 import { cn } from "@/lib/utils";
 
 interface BadgeProps extends HTMLAttributes<HTMLSpanElement> {
-  variant?: "brand" | "subtle" | "outline";
+  variant?: "default" | "blue" | "brand" | "subtle" | "outline";
 }
 
-function Badge({ variant = "outline", className, children, ...props }: BadgeProps) {
-  const variants = {
-    brand:
-      "bg-gradient-to-r from-brand-purple to-brand-blue text-white",
-    subtle:
-      "bg-gradient-brand-subtle text-brand-purple-light border border-brand-purple/30",
-    outline:
-      "border border-border text-text-secondary bg-surface",
-  };
-
+function Badge({ variant = "default", className, children, ...props }: BadgeProps) {
   return (
     <span
       className={cn(
-        "inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium",
-        variants[variant],
+        "inline-flex items-center gap-1 border border-warm-border px-2 py-0.5",
+        "font-sans text-2xs font-medium uppercase tracking-editorial text-ink-muted",
         className
       )}
+      style={{ borderRadius: "2px" }}
       {...props}
     >
       {children}

@@ -1,5 +1,4 @@
-// Chat panel: ask follow-up questions about the structured content
-// Slides up on first render, maintains full conversation history
+// Chat panel — editorial style, ink bubbles, Playfair header, typing dots
 
 "use client";
 
@@ -11,7 +10,6 @@ import {
   type KeyboardEvent,
 } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Send } from "lucide-react";
 import { sendChatMessage, type ChatMessage } from "@/actions/chat";
 import type { ClarityOutput } from "@/lib/types";
 
@@ -28,7 +26,6 @@ export function ChatPanel({ clarityOutput, originalText }: ChatPanelProps) {
   const bottomRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // Auto-scroll to latest message
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, isLoading]);
@@ -38,8 +35,7 @@ export function ChatPanel({ clarityOutput, originalText }: ChatPanelProps) {
     const trimmed = input.trim();
     if (!trimmed || isLoading) return;
 
-    const userMsg: ChatMessage = { role: "user", content: trimmed };
-    setMessages((prev) => [...prev, userMsg]);
+    setMessages((prev) => [...prev, { role: "user", content: trimmed }]);
     setInput("");
     setIsLoading(true);
     setError(null);
@@ -57,42 +53,26 @@ export function ChatPanel({ clarityOutput, originalText }: ChatPanelProps) {
   }
 
   function handleKeyDown(e: KeyboardEvent<HTMLInputElement>) {
-    if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault();
-      handleSubmit();
-    }
+    if (e.key === "Enter") { e.preventDefault(); handleSubmit(); }
   }
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 24 }}
+      initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.4, delay: 0.45, ease: [0.25, 0.46, 0.45, 0.94] }}
-      className="rounded-2xl border border-border bg-surface flex flex-col overflow-hidden"
+      transition={{ duration: 0.4, delay: 0.4, ease: "easeOut" }}
+      className="border-t border-warm-border mt-4"
     >
       {/* Header */}
-      <div className="px-5 py-4 border-b border-border-subtle">
-        <div className="flex items-center gap-2.5">
-          <span
-            className="size-2 rounded-full bg-brand-purple animate-pulse-glow shrink-0"
-            aria-hidden="true"
-          />
-          <div>
-            <h2 className="text-sm font-semibold text-text-primary leading-none">
-              Chat with your content
-            </h2>
-            <p className="text-xs text-text-muted mt-0.5">
-              Ask anything about what you pasted
-            </p>
-          </div>
-        </div>
+      <div className="py-4">
+        <h2 className="font-serif text-lg italic text-ink">Ask a follow-up</h2>
       </div>
 
-      {/* Message area — fixed 300px height */}
-      <div className="h-[300px] overflow-y-auto px-5 py-4 space-y-3 scrollbar-thin">
+      {/* Messages */}
+      <div className="h-[300px] overflow-y-auto space-y-3 scrollbar-thin pb-2">
         {messages.length === 0 && !isLoading && (
-          <p className="text-sm text-text-muted italic text-center mt-10">
-            Ask a follow-up about the content above…
+          <p className="font-sans text-sm text-ink-faint italic pt-4">
+            Ask anything about the content above…
           </p>
         )}
 
@@ -100,20 +80,26 @@ export function ChatPanel({ clarityOutput, originalText }: ChatPanelProps) {
           {messages.map((msg, i) => (
             <motion.div
               key={i}
-              initial={{ opacity: 0, y: 8 }}
+              initial={{ opacity: 0, y: 6 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.22 }}
+              transition={{ duration: 0.2 }}
               className={msg.role === "user" ? "flex justify-end" : "flex justify-start"}
             >
-              <div
-                className={
-                  msg.role === "user"
-                    ? "max-w-[78%] rounded-2xl rounded-br-sm bg-gradient-to-r from-brand-purple to-brand-blue px-4 py-2.5 text-sm text-white leading-relaxed"
-                    : "max-w-[84%] rounded-2xl rounded-bl-sm bg-surface-elevated border border-border px-4 py-2.5 text-sm text-text-secondary leading-relaxed"
-                }
-              >
-                {msg.content}
-              </div>
+              {msg.role === "user" ? (
+                <div
+                  className="max-w-[78%] bg-ink text-white px-4 py-2.5 font-sans text-sm leading-relaxed"
+                  style={{ borderRadius: "2px" }}
+                >
+                  {msg.content}
+                </div>
+              ) : (
+                <div
+                  className="max-w-[84%] bg-surface-white border border-warm-border px-4 py-2.5 font-sans text-sm text-ink leading-relaxed shadow-card"
+                  style={{ borderRadius: "2px" }}
+                >
+                  {msg.content}
+                </div>
+              )}
             </motion.div>
           ))}
         </AnimatePresence>
@@ -121,36 +107,31 @@ export function ChatPanel({ clarityOutput, originalText }: ChatPanelProps) {
         {/* Typing indicator */}
         {isLoading && (
           <motion.div
-            initial={{ opacity: 0, y: 6 }}
+            initial={{ opacity: 0, y: 4 }}
             animate={{ opacity: 1, y: 0 }}
             className="flex justify-start"
           >
-            <div className="rounded-2xl rounded-bl-sm bg-surface-elevated border border-border px-4 py-3">
-              <div className="flex gap-1 items-center h-4">
-                {[0, 1, 2].map((i) => (
-                  <span
-                    key={i}
-                    className="size-1.5 rounded-full bg-text-muted animate-bounce"
-                    style={{ animationDelay: `${i * 0.15}s` }}
-                    aria-hidden="true"
-                  />
-                ))}
-              </div>
+            <div
+              className="bg-surface-white border border-warm-border px-4 py-3 shadow-card flex items-center gap-1"
+              style={{ borderRadius: "2px" }}
+            >
+              <span className="typing-dot" />
+              <span className="typing-dot" />
+              <span className="typing-dot" />
             </div>
           </motion.div>
         )}
 
         {error && (
-          <p className="text-xs text-red-400 text-center">{error}</p>
+          <p className="font-sans text-xs text-red-600 pt-1">{error}</p>
         )}
-
         <div ref={bottomRef} />
       </div>
 
       {/* Input row */}
       <form
         onSubmit={handleSubmit}
-        className="px-4 py-3 border-t border-border-subtle flex gap-2 items-center"
+        className="flex gap-2 items-center pt-3 border-t border-warm-border mt-3"
       >
         <input
           ref={inputRef}
@@ -160,15 +141,16 @@ export function ChatPanel({ clarityOutput, originalText }: ChatPanelProps) {
           onKeyDown={handleKeyDown}
           placeholder="Ask a follow-up…"
           disabled={isLoading}
-          className="flex-1 rounded-xl bg-surface-elevated border border-border px-4 py-2.5 text-sm text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-brand-purple/40 focus:border-brand-purple/50 transition-colors duration-200 disabled:opacity-50"
+          className="flex-1 bg-cream border border-warm-border px-4 py-2.5 font-sans text-sm text-ink placeholder:text-ink-faint focus:outline-none focus:border-ink transition-colors duration-150 disabled:opacity-50"
+          style={{ borderRadius: "2px" }}
         />
         <button
           type="submit"
           disabled={!input.trim() || isLoading}
-          aria-label="Send message"
-          className="shrink-0 size-9 rounded-xl bg-gradient-to-r from-brand-purple to-brand-blue flex items-center justify-center text-white transition-all duration-200 hover:shadow-glow-purple hover:scale-105 active:scale-95 disabled:opacity-40 disabled:pointer-events-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-purple focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+          className="shrink-0 bg-ink text-white font-sans text-sm font-semibold px-5 py-2.5 hover:bg-ink-blue transition-colors duration-150 disabled:opacity-40 disabled:pointer-events-none focus-visible:outline-2 focus-visible:outline-ink-blue focus-visible:outline-offset-2"
+          style={{ borderRadius: "2px" }}
         >
-          <Send className="size-3.5" aria-hidden="true" />
+          Send →
         </button>
       </form>
     </motion.div>

@@ -1,4 +1,4 @@
-// Reusable Button primitive with multiple variants and sizes
+// Button — ink-on-paper editorial style, sharp corners, no gradients
 
 import { forwardRef, type ButtonHTMLAttributes } from "react";
 import { cn } from "@/lib/utils";
@@ -15,20 +15,21 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
     ref
   ) => {
     const base =
-      "inline-flex items-center justify-center font-medium transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-purple focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:opacity-50 disabled:pointer-events-none rounded-xl";
+      "inline-flex items-center justify-center font-sans font-semibold tracking-wide transition-all duration-150 focus-visible:outline-none focus-visible:outline-2 focus-visible:outline-ink-blue focus-visible:outline-offset-2 disabled:opacity-40 disabled:pointer-events-none";
 
     const variants = {
       primary:
-        "bg-gradient-to-r from-brand-purple to-brand-blue text-white shadow-glow-purple hover:shadow-glow-brand hover:scale-[1.02] active:scale-[0.98]",
+        "bg-ink text-white hover:bg-ink-blue active:opacity-80",
       secondary:
-        "bg-surface-elevated border border-border text-text-primary hover:border-brand-purple hover:bg-surface",
-      ghost: "text-text-secondary hover:text-text-primary hover:bg-surface-elevated",
+        "bg-transparent border border-warm-border text-ink hover:border-ink hover:bg-surface-tinted",
+      ghost:
+        "bg-transparent text-ink-muted hover:text-ink hover:bg-surface-tinted",
     };
 
     const sizes = {
-      sm: "text-sm px-4 py-2 gap-1.5",
+      sm: "text-xs px-4 py-2 gap-1.5",
       md: "text-sm px-5 py-2.5 gap-2",
-      lg: "text-base px-8 py-4 gap-2",
+      lg: "text-sm px-7 py-3.5 gap-2",
     };
 
     return (
@@ -36,13 +37,18 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
         ref={ref}
         disabled={disabled || isLoading}
         className={cn(base, variants[variant], sizes[size], className)}
+        style={{ borderRadius: "2px" }}
         {...props}
       >
         {isLoading ? (
-          <>
-            <span className="size-4 rounded-full border-2 border-white/30 border-t-white animate-spin" />
-            <span>Processing…</span>
-          </>
+          <span className="flex items-center gap-2">
+            <span className="flex gap-1">
+              <span className="typing-dot" />
+              <span className="typing-dot" />
+              <span className="typing-dot" />
+            </span>
+            <span>Analysing…</span>
+          </span>
         ) : (
           children
         )}

@@ -1,4 +1,4 @@
-// Page transition wrapper — re-mounts on every route change for smooth fade-in
+// Page transition wrapper — smooth fade on every route change
 
 "use client";
 
@@ -8,9 +8,9 @@ import type { ReactNode } from "react";
 export default function Template({ children }: { children: ReactNode }) {
   return (
     <motion.div
-      initial={{ opacity: 0, y: 6 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.28, ease: [0.25, 0.46, 0.45, 0.94] }}
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.3, ease: "easeOut" }}
     >
       {children}
     </motion.div>

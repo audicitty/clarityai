@@ -1,11 +1,11 @@
-// Minimal footer for the landing page
-
-import { FOOTER_CREDIT } from "@/lib/constants";
+// Footer — cream, top border, centered muted credit
 
 export function Footer() {
   return (
-    <footer className="relative z-10 py-8 text-center">
-      <p className="text-text-muted text-sm">{FOOTER_CREDIT}</p>
+    <footer className="border-t border-warm-border py-8 text-center">
+      <p className="font-sans text-[13px] text-ink-muted">
+        ClarityAI — Built with Gemini API
+      </p>
     </footer>
   );
 }

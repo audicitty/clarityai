@@ -1,110 +1,76 @@
-// Hero section of the landing page with animated headline and CTA
+// Hero — editorial headline with cycling word-swap animation (Framer Motion)
 
 "use client";
 
+import { useState, useEffect } from "react";
 import Link from "next/link";
-import { motion } from "framer-motion";
-import { Badge } from "@/components/ui/Badge";
-import { Button } from "@/components/ui/Button";
-import { BRAND, TRUST_PILLS, HERO_BADGE, NAV } from "@/lib/constants";
+import { motion, AnimatePresence } from "framer-motion";
 
-const fadeUpVariants = {
-  hidden: { opacity: 0, y: 24 },
-  visible: (delay: number) => ({
-    opacity: 1,
-    y: 0,
-    transition: {
-      duration: 0.6,
-      delay,
-      ease: [0.25, 0.46, 0.45, 0.94] as [number, number, number, number],
-    },
-  }),
-};
+const CYCLING_WORDS = ["chaos", "noise", "meetings", "thoughts", "complexity"];
+const WORD_DURATION = 2000;
+const TRANSITION_MS = 300;
+
+// Fixed width wide enough for the longest word so layout never shifts
+const WORD_WIDTH = "w-[220px] sm:w-[280px] md:w-[340px]";
 
 export function Hero() {
-  return (
-    <section className="relative z-10 flex flex-col items-center justify-center min-h-screen px-6 pt-24 pb-16 text-center">
-      {/* Badge */}
-      <motion.div
-        custom={0}
-        initial="hidden"
-        animate="visible"
-        variants={fadeUpVariants}
-        className="mb-8"
-      >
-        <Badge variant="subtle" className="animate-pulse-glow">
-          <span aria-hidden="true">✦</span>
-          {HERO_BADGE}
-        </Badge>
-      </motion.div>
+  const [index, setIndex] = useState(0);
 
-      {/* Headline */}
-      <motion.h1
-        custom={0.1}
-        initial="hidden"
-        animate="visible"
-        variants={fadeUpVariants}
-        className="text-5xl font-bold leading-tight tracking-tight sm:text-6xl md:text-7xl lg:text-[72px] max-w-3xl"
-      >
-        <span className="text-text-primary block">{BRAND.taglinePrefix}</span>
-        <span className="bg-gradient-to-r from-brand-purple to-brand-blue bg-clip-text text-transparent block">
-          {BRAND.taglineSuffix}
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setIndex((prev) => (prev + 1) % CYCLING_WORDS.length);
+    }, WORD_DURATION + TRANSITION_MS);
+    return () => clearInterval(interval);
+  }, []);
+
+  return (
+    <section className="min-h-screen flex flex-col items-center justify-center text-center px-6 pt-[120px] pb-20">
+      {/* Eyebrow */}
+      <p className="font-sans text-[11px] font-medium uppercase tracking-[0.18em] text-ink-muted mb-8">
+        AI-Powered Intelligence
+      </p>
+
+      {/* Main headline */}
+      <h1 className="font-serif font-bold text-ink leading-[1.08] text-[42px] sm:text-[56px] md:text-[72px]">
+        <span className="block">Turn</span>
+
+        {/* Animated word — fixed width container to prevent layout shift */}
+        <span className={`relative inline-flex justify-center overflow-hidden ${WORD_WIDTH} h-[1.1em]`}>
+          <AnimatePresence mode="wait" initial={false}>
+            <motion.span
+              key={CYCLING_WORDS[index]}
+              initial={{ y: 40, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: -40, opacity: 0 }}
+              transition={{ duration: TRANSITION_MS / 1000, ease: "easeInOut" }}
+              className="absolute font-serif font-bold italic text-ink-blue underline decoration-ink-blue decoration-2 underline-offset-4"
+            >
+              {CYCLING_WORDS[index]}
+            </motion.span>
+          </AnimatePresence>
         </span>
-      </motion.h1>
+
+        <span className="block">into clarity.</span>
+      </h1>
 
       {/* Subtext */}
-      <motion.p
-        custom={0.2}
-        initial="hidden"
-        animate="visible"
-        variants={fadeUpVariants}
-        className="mt-6 text-lg text-text-secondary max-w-xl leading-relaxed"
-      >
-        {BRAND.description}
-      </motion.p>
+      <p className="font-sans text-[17px] sm:text-lg text-ink-muted mt-8 max-w-[480px] leading-relaxed">
+        Paste anything. Get structure, decisions, and actions in seconds.
+      </p>
 
-      {/* CTA Button */}
-      <motion.div
-        custom={0.3}
-        initial="hidden"
-        animate="visible"
-        variants={fadeUpVariants}
-        className="mt-10"
+      {/* CTA */}
+      <Link
+        href="/app"
+        className="mt-10 inline-block font-sans text-sm font-semibold bg-ink text-white px-8 py-4 hover:bg-ink-blue transition-colors duration-150 focus-visible:outline-2 focus-visible:outline-ink-blue focus-visible:outline-offset-2"
+        style={{ borderRadius: "2px" }}
       >
-        <Link href={NAV.ctaHref}>
-          <Button
-            variant="primary"
-            size="lg"
-            className="relative overflow-hidden group"
-          >
-            <span className="relative z-10">Try ClarityAI free →</span>
-            {/* Shimmer overlay */}
-            <span
-              className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700 ease-in-out"
-              aria-hidden="true"
-            />
-          </Button>
-        </Link>
-      </motion.div>
+        Start clarifying →
+      </Link>
 
-      {/* Trust Pills */}
-      <motion.div
-        custom={0.4}
-        initial="hidden"
-        animate="visible"
-        variants={fadeUpVariants}
-        className="mt-8 flex flex-wrap items-center justify-center gap-3 sm:gap-6"
-      >
-        {TRUST_PILLS.map((pill, index) => (
-          <span
-            key={index}
-            className="flex items-center gap-1.5 text-sm text-text-muted"
-          >
-            <span aria-hidden="true">{pill.icon}</span>
-            {pill.label}
-          </span>
-        ))}
-      </motion.div>
+      {/* Trust line */}
+      <p className="font-sans text-sm text-ink-faint mt-5 tracking-wide">
+        Instant results · Nothing stored · Free to use
+      </p>
     </section>
   );
 }
