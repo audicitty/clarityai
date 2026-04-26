@@ -1,9 +1,5 @@
-// Root layout — editorial aesthetic, Inter + Playfair via Google Fonts in CSS
-// redeploy: 2026-04-22
-
 import type { Metadata } from "next";
 import "./globals.css";
-import { ToastProvider } from "@/lib/toast-context";
 
 export const metadata: Metadata = {
   title: {
@@ -26,9 +22,7 @@ export default function RootLayout({
 }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="en">
-      <body>
-        <ToastProvider>{children}</ToastProvider>
-      </body>
+      <body>{children}</body>
     </html>
   );
 }
